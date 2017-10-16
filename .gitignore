@@ -1,0 +1,9 @@
+terraform-provider-proxmox
+
+vendor
+
+*.tf
+*.tfstate
+*.tfstate.backup
+.terraform
+*.log
