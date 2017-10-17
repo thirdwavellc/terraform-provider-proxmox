@@ -128,7 +128,7 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 	d.Partial(true)
 
 	if d.HasChange("vmid") {
-		return errors.New("You cannot change the VMID of an already created machine")
+		return errors.New("You cannot change the vmid of an already created machine!")
 	}
 
 	client := m.(*proxmox.ProxmoxClient)
@@ -145,7 +145,8 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 		req.Storage = d.Get("storage").(string)
 	}
 	if d.HasChange("root_fs") {
-		req.RootFs = d.Get("root_fs").(string)
+		// TODO: handle this with separate resizing call?
+		return errors.New("You cannot change the root_fs of an already created machine!")
 	}
 	if d.HasChange("cores") {
 		req.Cores = d.Get("cores").(int)
