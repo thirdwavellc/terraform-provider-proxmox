@@ -105,6 +105,22 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceContainerRead(d *schema.ResourceData, m interface{}) error {
+	client := m.(*proxmox.ProxmoxClient)
+	req := &proxmox.ExistingContainerRequest{}
+	req.Node = d.Get("node").(string)
+	req.VMID = d.Get("vmid").(string)
+	container, err := client.GetContainerConfig(req)
+
+	if err != nil {
+		return err
+	}
+
+	d.Set("hostname", container.Hostname)
+	d.Set("cores", container.Cores)
+	d.Set("memory", container.Memory)
+	d.Set("swap", container.Swap)
+	d.Set("net0", container.Net0)
+
 	return nil
 }
 
