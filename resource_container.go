@@ -2,8 +2,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/thirdwavellc/go-proxmox/proxmox"
+	"strings"
 )
 
 func resourceContainer() *schema.Resource {
@@ -65,6 +67,11 @@ func resourceContainer() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			"ssh_keys": &schema.Schema{
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
 		},
 	}
 }
@@ -85,7 +92,9 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 	req.Password = d.Get("root_password").(string)
 	req.OnBoot = d.Get("on_boot").(int)
 	req.Unprivileged = d.Get("unprivileged").(int)
-	//req.SshPublicKeys = d.Get("ssh_public_keys").(string)
+	if ssh_keys_len := d.Get("ssh_keys.#").(int); ssh_keys_len > 0 {
+		req.SshPublicKeys = formatSshKeys(d, ssh_keys_len)
+	}
 	upid, err := client.CreateContainer(req)
 
 	statusRequest := proxmox.NodeTaskStatusRequest{}
@@ -169,7 +178,9 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 	if d.HasChange("unprivileged") {
 		req.Unprivileged = d.Get("unprivileged").(int)
 	}
-	//req.SshPublicKeys = d.Get("ssh_public_keys").(string)
+	if d.HasChange("ssh_keys") {
+		return errors.New("You cannot change ssh_keys of an already created machine!")
+	}
 	_, err := client.UpdateContainer(req)
 
 	if err != nil {
@@ -216,4 +227,12 @@ func resourceContainerDelete(d *schema.ResourceData, m interface{}) error {
 	}
 
 	return nil
+}
+
+func formatSshKeys(d *schema.ResourceData, ssh_keys_len int) string {
+	keys := make([]string, ssh_keys_len)
+	for i := 0; i < ssh_keys_len; i++ {
+		keys = append(keys, d.Get(fmt.Sprintf("ssh_keys.%d", i)).(string))
+	}
+	return strings.Join(keys, "\n")
 }
