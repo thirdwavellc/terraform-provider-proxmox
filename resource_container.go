@@ -78,46 +78,71 @@ func resourceContainer() *schema.Resource {
 
 func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*proxmox.ProxmoxClient)
-	req := &proxmox.NewContainerRequest{}
-	req.Node = d.Get("node").(string)
-	req.VMID = d.Get("vmid").(string)
-	req.OsTemplate = d.Get("os_template").(string)
-	req.Net0 = d.Get("net0").(string)
-	req.Storage = d.Get("storage").(string)
-	req.RootFs = d.Get("root_fs").(string)
-	req.Cores = d.Get("cores").(int)
-	req.Memory = d.Get("memory").(int)
-	req.Swap = d.Get("swap").(int)
-	req.Hostname = d.Get("hostname").(string)
-	req.Password = d.Get("root_password").(string)
-	req.OnBoot = d.Get("on_boot").(int)
-	req.Unprivileged = d.Get("unprivileged").(int)
+	req := &proxmox.NewContainerRequest{
+		Node:         d.Get("node").(string),
+		VMID:         d.Get("vmid").(string),
+		OsTemplate:   d.Get("os_template").(string),
+		Net0:         d.Get("net0").(string),
+		Storage:      d.Get("storage").(string),
+		RootFs:       d.Get("root_fs").(string),
+		Cores:        d.Get("cores").(int),
+		Memory:       d.Get("memory").(int),
+		Swap:         d.Get("swap").(int),
+		Hostname:     d.Get("hostname").(string),
+		Password:     d.Get("root_password").(string),
+		OnBoot:       d.Get("on_boot").(int),
+		Unprivileged: d.Get("unprivileged").(int),
+	}
 	if ssh_keys_len := d.Get("ssh_keys.#").(int); ssh_keys_len > 0 {
 		req.SshPublicKeys = formatSshKeys(d, ssh_keys_len)
 	}
-	upid, err := client.CreateContainer(req)
+	createUpid, err := client.CreateContainer(req)
 
-	statusRequest := &proxmox.NodeTaskStatusRequest{}
-	statusRequest.Node = req.Node
-	statusRequest.UPID = upid
-	task, err := client.CheckNodeTaskStatus(statusRequest)
+	createStatusReq := &proxmox.NodeTaskStatusRequest{
+		Node: req.Node,
+		UPID: createUpid,
+	}
+	createTask, err := client.CheckNodeTaskStatus(createStatusReq)
 
 	if err != nil {
 		return err
 	}
 
-	if task.ExitStatus == "OK" {
-		d.SetId(req.VMID)
+	if createTask.ExitStatus != "OK" {
+		return err
 	}
+
+	startReq := &proxmox.ExistingContainerRequest{
+		Node: req.Node,
+		VMID: req.VMID,
+	}
+	startUpid, err := client.StartContainer(startReq)
+
+	if err != nil {
+		return err
+	}
+
+	startStatusReq := &proxmox.NodeTaskStatusRequest{
+		Node: req.Node,
+		UPID: startUpid,
+	}
+	startTask, err := client.CheckNodeTaskStatus(startStatusReq)
+
+	if startTask.ExitStatus != "OK" {
+		return errors.New("Exit Status: " + startTask.ExitStatus)
+	}
+
+	d.SetId(req.VMID)
 
 	return nil
 }
 
 func resourceContainerRead(d *schema.ResourceData, m interface{}) error {
 	client := m.(*proxmox.ProxmoxClient)
-	req := &proxmox.ContainerConfigRequest{}
-	req.Node = d.Get("node").(string)
-	req.VMID = d.Get("vmid").(string)
+	req := &proxmox.ContainerConfigRequest{
+		Node: d.Get("node").(string),
+		VMID: d.Get("vmid").(string),
+	}
 	container, err := client.GetContainerConfig(req)
 
 	if err != nil {
@@ -141,9 +166,10 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	client := m.(*proxmox.ProxmoxClient)
-	req := &proxmox.ExistingContainerRequest{}
-	req.Node = d.Get("node").(string)
-	req.VMID = d.Get("vmid").(string)
+	req := &proxmox.ExistingContainerRequest{
+		Node: d.Get("node").(string),
+		VMID: d.Get("vmid").(string),
+	}
 	if d.HasChange("os_template") {
 		req.OsTemplate = d.Get("os_template").(string)
 	}
@@ -204,26 +230,65 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 
 func resourceContainerDelete(d *schema.ResourceData, m interface{}) error {
 	client := m.(*proxmox.ProxmoxClient)
-	req := &proxmox.ExistingContainerRequest{}
-	req.Node = d.Get("node").(string)
-	req.VMID = d.Get("vmid").(string)
-	upid, err := client.DeleteContainer(req)
+	node := d.Get("node").(string)
+	vmid := d.Get("vmid").(string)
+
+	containerStatusReq := &proxmox.ContainerStatusRequest{
+		Node: node,
+		VMID: vmid,
+	}
+	containerStatus, err := client.GetContainerStatus(containerStatusReq)
 
 	if err != nil {
 		return err
 	}
 
-	statusRequest := &proxmox.NodeTaskStatusRequest{}
-	statusRequest.Node = d.Get("node").(string)
-	statusRequest.UPID = upid
-	task, err := client.CheckNodeTaskStatus(statusRequest)
+	containerRunning := containerStatus.Status == "running"
+
+	if containerRunning {
+		shutdownReq := &proxmox.ExistingContainerRequest{
+			Node: node,
+			VMID: vmid,
+		}
+		shutdownUpid, err := client.ShutdownContainer(shutdownReq)
+
+		if err != nil {
+			return err
+		}
+
+		shutdownStatusReq := &proxmox.NodeTaskStatusRequest{
+			Node: node,
+			UPID: shutdownUpid,
+		}
+		shutdownTask, err := client.CheckNodeTaskStatus(shutdownStatusReq)
+
+		if shutdownTask.ExitStatus != "OK" {
+			return err
+		}
+	}
+
+	req := &proxmox.ExistingContainerRequest{
+		Node: d.Get("node").(string),
+		VMID: d.Get("vmid").(string),
+	}
+	deleteUpid, err := client.DeleteContainer(req)
 
 	if err != nil {
 		return err
 	}
 
-	if task.ExitStatus != "OK" {
-		return errors.New("Exit Status: " + task.ExitStatus)
+	deleteStatusRequest := &proxmox.NodeTaskStatusRequest{
+		Node: d.Get("node").(string),
+		UPID: deleteUpid,
+	}
+	deleteTask, err := client.CheckNodeTaskStatus(deleteStatusRequest)
+
+	if err != nil {
+		return err
+	}
+
+	if deleteTask.ExitStatus != "OK" {
+		return errors.New("Exit Status: " + deleteTask.ExitStatus)
 	}
 
 	return nil
