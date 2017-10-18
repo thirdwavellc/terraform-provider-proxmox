@@ -41,7 +41,12 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Password: d.Get("password").(string),
 	}
 
-	auth, err := config.GetAuth()
+	ticketReq := &proxmox.TicketRequest{
+		Username: d.Get("user").(string),
+		Password: d.Get("password").(string),
+	}
+
+	auth, err := config.GetAuth(ticketReq)
 	config.Auth = auth
 
 	return &config, err

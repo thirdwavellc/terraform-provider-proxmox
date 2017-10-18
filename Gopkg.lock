@@ -196,7 +196,7 @@
   branch = "master"
   name = "github.com/thirdwavellc/go-proxmox"
   packages = ["proxmox"]
-  revision = "7536e424b69a7a5829bd2f99b11d41fdb3444678"
+  revision = "b734e57a82ea02c2385b40a50f0c50d8fed0b457"
 
 [[projects]]
   name = "github.com/ulikunitz/xz"

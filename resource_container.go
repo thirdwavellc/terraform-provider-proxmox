@@ -97,7 +97,7 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	upid, err := client.CreateContainer(req)
 
-	statusRequest := proxmox.NodeTaskStatusRequest{}
+	statusRequest := &proxmox.NodeTaskStatusRequest{}
 	statusRequest.Node = req.Node
 	statusRequest.UPID = upid
 	task, err := client.CheckNodeTaskStatus(statusRequest)
@@ -115,7 +115,7 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceContainerRead(d *schema.ResourceData, m interface{}) error {
 	client := m.(*proxmox.ProxmoxClient)
-	req := &proxmox.ExistingContainerRequest{}
+	req := &proxmox.ContainerConfigRequest{}
 	req.Node = d.Get("node").(string)
 	req.VMID = d.Get("vmid").(string)
 	container, err := client.GetContainerConfig(req)
@@ -213,7 +213,7 @@ func resourceContainerDelete(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	statusRequest := proxmox.NodeTaskStatusRequest{}
+	statusRequest := &proxmox.NodeTaskStatusRequest{}
 	statusRequest.Node = d.Get("node").(string)
 	statusRequest.UPID = upid
 	task, err := client.CheckNodeTaskStatus(statusRequest)
