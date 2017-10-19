@@ -196,7 +196,7 @@
   branch = "master"
   name = "github.com/thirdwavellc/go-proxmox"
   packages = ["proxmox"]
-  revision = "d4340a2b56ffaba9fe5950d7f2e292cf387fb315"
+  revision = "06d70c3b8008bcf71f8c49e86a0cafd3b93819af"
 
 [[projects]]
   name = "github.com/ulikunitz/xz"
@@ -243,6 +243,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6ecfabde5d9ec70795390120b9dc938d694e4c76d0311f27bfa4d341b81d814d"
+  inputs-digest = "eb98b4a595cd974a8e49f752aa15c16e4096c96df05eeb3eb420b94d26bb87b5"
   solver-name = "gps-cdcl"
   solver-version = 1
