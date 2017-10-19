@@ -29,6 +29,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"proxmox_container": resourceContainer(),
+			"proxmox_group":     resourceGroup(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
