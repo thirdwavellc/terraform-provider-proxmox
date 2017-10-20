@@ -31,6 +31,7 @@ func Provider() *schema.Provider {
 			"proxmox_container": resourceContainer(),
 			"proxmox_group":     resourceGroup(),
 			"proxmox_backup":    resourceBackup(),
+			"proxmox_user":      resourceUser(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
