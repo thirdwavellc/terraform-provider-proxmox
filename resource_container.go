@@ -35,6 +35,14 @@ func resourceContainer() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			"search_domain": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"nameserver": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"storage": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -57,6 +65,10 @@ func resourceContainer() *schema.Resource {
 			},
 			"root_password": &schema.Schema{
 				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"start": &schema.Schema{
+				Type:     schema.TypeInt,
 				Optional: true,
 			},
 			"on_boot": &schema.Schema{
@@ -83,6 +95,8 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 		VMID:         d.Get("vmid").(string),
 		OsTemplate:   d.Get("os_template").(string),
 		Net0:         d.Get("net0").(string),
+		SearchDomain: d.Get("search_domain").(string),
+		Nameserver:   d.Get("nameserver").(string),
 		Storage:      d.Get("storage").(string),
 		RootFs:       d.Get("root_fs").(string),
 		Cores:        d.Get("cores").(int),
@@ -90,6 +104,7 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 		Swap:         d.Get("swap").(int),
 		Hostname:     d.Get("hostname").(string),
 		Password:     d.Get("root_password").(string),
+		Start:        d.Get("start").(int),
 		OnBoot:       d.Get("on_boot").(int),
 		Unprivileged: d.Get("unprivileged").(int),
 	}
@@ -110,26 +125,6 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 
 	if createTask.ExitStatus != "OK" {
 		return err
-	}
-
-	startReq := &proxmox.ExistingContainerRequest{
-		Node: req.Node,
-		VMID: req.VMID,
-	}
-	startUpid, err := client.StartContainer(startReq)
-
-	if err != nil {
-		return err
-	}
-
-	startStatusReq := &proxmox.NodeTaskStatusRequest{
-		Node: req.Node,
-		UPID: startUpid,
-	}
-	startTask, err := client.CheckNodeTaskStatus(startStatusReq)
-
-	if startTask.ExitStatus != "OK" {
-		return errors.New("Exit Status: " + startTask.ExitStatus)
 	}
 
 	d.SetId(req.VMID)
@@ -154,6 +149,8 @@ func resourceContainerRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("memory", container.Memory)
 	d.Set("swap", container.Swap)
 	d.Set("net0", container.Net0)
+	d.Set("search_domain", container.SearchDomain)
+	d.Set("nameserver", container.Nameserver)
 
 	return nil
 }
