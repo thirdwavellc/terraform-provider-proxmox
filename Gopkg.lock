@@ -68,10 +68,10 @@
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/google/go-querystring"
   packages = ["query"]
-  revision = "44c6ddd0a2342c386950e880b658017258da92fc"
-  version = "v1.0.0"
+  revision = "c8c88dbee036db4e4808d1f2ec8c2e15e11c3f80"
 
 [[projects]]
   name = "github.com/hashicorp/errwrap"
@@ -189,8 +189,8 @@
 [[projects]]
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
-  revision = "ae18d6b8b3205b561c79e8e5f69bff09736185f4"
-  version = "v1.0.0"
+  revision = "af06845cf3004701891bf4fdb884bfe4920b3727"
+  version = "v1.1.0"
 
 [[projects]]
   name = "github.com/mitchellh/go-testing-interface"
@@ -244,7 +244,7 @@
   branch = "master"
   name = "github.com/thirdwavellc/go-proxmox"
   packages = ["proxmox"]
-  revision = "8b65e484b3adb8c9fb85581fb273d55d81677e63"
+  revision = "9d6224d8cec47c97c4c8f8c1fbd62bde47e85119"
 
 [[projects]]
   name = "github.com/ulikunitz/xz"
