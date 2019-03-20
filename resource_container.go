@@ -31,6 +31,10 @@ func resourceContainer() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"mp0": &schema.Schema{
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			"net0": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
@@ -99,6 +103,7 @@ func resourceContainerCreate(d *schema.ResourceData, m interface{}) error {
 		Nameserver:   d.Get("nameserver").(string),
 		Storage:      d.Get("storage").(string),
 		RootFs:       d.Get("root_fs").(string),
+		Mp0:          d.Get("mp0").(string),
 		Cores:        d.Get("cores").(int),
 		Memory:       d.Get("memory").(int),
 		Swap:         d.Get("swap").(int),
@@ -180,6 +185,10 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 		// TODO: handle this with separate resizing call?
 		return errors.New("You cannot change the root_fs of an already created machine!")
 	}
+	if d.HasChange("mp0") {
+		// TODO: handle this with separate resizing call?
+		return errors.New("You cannot change a mount point of an already created machine!")
+	}
 	if d.HasChange("cores") {
 		req.Cores = d.Get("cores").(int)
 	}
@@ -214,6 +223,7 @@ func resourceContainerUpdate(d *schema.ResourceData, m interface{}) error {
 	d.SetPartial("net0")
 	d.SetPartial("storage")
 	d.SetPartial("root_fs")
+	d.SetPartial("mp0")
 	d.SetPartial("cores")
 	d.SetPartial("memory")
 	d.SetPartial("swap")
